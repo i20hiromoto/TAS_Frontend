@@ -40,7 +40,7 @@ const TournamentCanvas: React.FC<TournamentCanvasProps> = ({ matches }) => {
     ctx.lineWidth = 1;
 
     for (let i = 0; i < round; i++) {
-      const roundKey = `R${i + 1}`;
+      const roundKey = `${i + 1}`;
       for (let j = 0; j < n; j++) {
         let idx = Math.floor(j / 2);
         if (!matches[roundKey] || !matches[roundKey][idx]) {
@@ -70,6 +70,12 @@ const TournamentCanvas: React.FC<TournamentCanvasProps> = ({ matches }) => {
         }
 
         //縦線の描画
+        ctx.strokeStyle = "black";
+        if (match.player1 === match.winner && j % 2 == 0) {
+          ctx.strokeStyle = "red";
+        } else if (match.player2 === match.winner && j % 2 == 1) {
+          ctx.strokeStyle = "red";
+        }
         ctx.beginPath();
         ctx.moveTo(start_width + width * i, start_height + height * j + space);
         ctx.lineTo(
@@ -78,7 +84,11 @@ const TournamentCanvas: React.FC<TournamentCanvasProps> = ({ matches }) => {
         );
         ctx.stroke();
         ctx.closePath();
+        ctx.strokeStyle = "black";
         //上側の横線の描画
+        if (match.player1 == match.winner) {
+          ctx.strokeStyle = "red";
+        }
         if (j % 2 === 0) {
           ctx.beginPath();
           ctx.moveTo(
@@ -91,7 +101,11 @@ const TournamentCanvas: React.FC<TournamentCanvasProps> = ({ matches }) => {
           );
           ctx.stroke();
           ctx.closePath();
+          ctx.strokeStyle = "black";
           //下側の横線の描画
+          if (match.player2 == match.winner) {
+            ctx.strokeStyle = "red";
+          }
           ctx.beginPath();
           ctx.moveTo(
             start_width + width * (i + 1),
@@ -120,7 +134,8 @@ const TournamentCanvas: React.FC<TournamentCanvasProps> = ({ matches }) => {
     <div
       style={{
         width: "w-half",
-        height: "100%",
+        height: "h-half",
+        overflow: "auto",
       }}
     >
       <canvas ref={canvasRef}></canvas>

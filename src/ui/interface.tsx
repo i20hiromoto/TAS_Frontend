@@ -15,7 +15,10 @@ export type Result = {
       c1: number;
       c2: number;
     };
-    game: any[];
+    game: {
+      set?: { player1: number; player2: number };
+    };
+    name: string;
   };
 };
 

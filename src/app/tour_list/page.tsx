@@ -14,14 +14,16 @@ import {
 import { CalendarIcon, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import axios from "axios";
-import { TourInfo } from "../ui/interface";
+import { TourInfo } from "@/ui/interface";
+import { useRouter } from "next/navigation";
+import Header from "@/ui/header";
 
 // Mock data for tournaments
 
 export default function TournamentList() {
   const [tourinfo, setTourinfo] = useState<TourInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
-
+  const router = useRouter();
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -39,6 +41,8 @@ export default function TournamentList() {
 
   const handleEdit = (id: number) => {
     // Placeholder for edit functionality
+    sessionStorage.setItem("id", id.toString());
+    router.push(`/admin`);
     console.log(`Editing tournament with id: ${id}`);
   };
 
@@ -55,6 +59,7 @@ export default function TournamentList() {
 
   return (
     <div className="container mx-auto py-10">
+      <Header />
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Tournament List</CardTitle>

@@ -31,6 +31,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { format, parseISO } from "date-fns";
 import { Players, TourInfo } from "../ui/interface";
+import { useRouter } from "next/navigation";
 
 function Dashboard() {
   const [selectedValue, setSelectedValue] = useState<string | undefined>(
@@ -40,9 +41,9 @@ function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tourinfo, setTourinfo] = useState<TourInfo[]>([]);
-  const [upcometour_num, setUpcometour_num] = useState<number>();
+  const [upcometour_num, setUpcometour_num] = useState<number>(0);
   const [upcometour_info, setUpcometour_info] = useState<TourInfo[]>([]);
-
+  const router = useRouter();
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = "http://localhost:3001/files/template.xlsx";
@@ -51,6 +52,7 @@ function Dashboard() {
     link.click();
     document.body.removeChild(link);
   };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -64,18 +66,15 @@ function Dashboard() {
     };
 
     fetchData();
-  });
+  }, []);
 
   useEffect(() => {
     const updateDate = () => {
       let upcometour_num = 0;
       const now = new Date();
-      const formattedDate = format(now, "yyyy/MM/dd");
 
-      for (let i = 0; i < tourinfo.length; i++) {
-        const targetDate = parseISO(tourinfo[i].date);
-
-        // 現在の日付と任意の日付を比較
+      const upcomingTours = tourinfo.filter((tour) => {
+        const targetDate = parseISO(tour.date);
         const nowDateOnly = new Date(
           now.getFullYear(),
           now.getMonth(),
@@ -87,26 +86,24 @@ function Dashboard() {
           targetDate.getDate()
         );
 
-        if (nowDateOnly < targetDateOnly) {
-          // 任意の日付が未来の場合
-          upcometour_num++;
-          setUpcometour_info((prev) => [...prev, tourinfo[i]]);
-        }
-      }
+        return nowDateOnly < targetDateOnly;
+      });
+
+      upcometour_num = upcomingTours.length;
       setUpcometour_num(upcometour_num);
+      setUpcometour_info(upcomingTours);
     };
 
     updateDate();
-    const intervalId = setInterval(updateDate, 86400000); // 毎日1回更新
-
-    return () => clearInterval(intervalId);
-  }, []);
+  }, [tourinfo]);
 
   const handleSelectChange = (value: string) => {
     setSelectedValue(value);
   };
 
-  const handleUpload = async () => {
+  const handleUpload = async (event: React.FormEvent) => {
+    event.preventDefault();
+
     if (!file || !selectedValue) {
       setError("ファイルとトーナメントの規模を選択してください");
       return;
@@ -130,6 +127,9 @@ function Dashboard() {
         }
       );
       console.log(response.data);
+      if (response !== null) {
+        router.push("/tour_list");
+      }
     } catch (error: any) {
       console.error("Error uploading file:", error);
       setError("ファイルのアップロードに失敗しました");
@@ -137,6 +137,7 @@ function Dashboard() {
       setLoading(false);
     }
   };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setFile(event.target.files[0]);
@@ -204,7 +205,7 @@ function Dashboard() {
               ) : (
                 upcometour_info.map((item: any, index) => (
                   <div key={index} className="py-2 border-b last:border-none">
-                    {item}
+                    {item.name}
                   </div>
                 ))
               )}
@@ -218,7 +219,7 @@ function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form>
+              <form onSubmit={handleUpload}>
                 <div className="grid w-full items-center gap-4">
                   <div className="flex flex-col space-y-1.5">
                     <Input
@@ -233,15 +234,19 @@ function Dashboard() {
                       onValueChange={handleSelectChange}
                     >
                       <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="規模を選択" />
+                        <SelectValue placeholder="競技を選択" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectLabel>規模</SelectLabel>
-                          <SelectItem value="16">ベスト16</SelectItem>
-                          <SelectItem value="32">ベスト32</SelectItem>
-                          <SelectItem value="64">ベスト64</SelectItem>
-                          <SelectItem value="128">ベスト128</SelectItem>
+                          <SelectLabel>競技</SelectLabel>
+                          <SelectItem value="badminton">
+                            バドミントン
+                          </SelectItem>
+                          <SelectItem value="tennis">テニス</SelectItem>
+                          <SelectItem value="softtennis">
+                            ソフトテニス
+                          </SelectItem>
+                          <SelectItem value="tabletennis">卓球</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
