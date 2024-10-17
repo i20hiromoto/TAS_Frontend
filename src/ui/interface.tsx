@@ -3,6 +3,7 @@ export type TourInfo = {
   name: string;
   venue: string;
   date: string;
+  gendate: string;
 };
 
 export type Result = {

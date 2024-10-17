@@ -206,7 +206,7 @@ function Dashboard() {
               ) : (
                 upcometour_info.map((item: any, index) => (
                   <div key={index} className="py-2 border-b last:border-none">
-                    {item.name}
+                    大会名 : {item.name} 日時 : {item.date}
                   </div>
                 ))
               )}
@@ -216,7 +216,7 @@ function Dashboard() {
             <CardHeader>
               <CardTitle>クイックセットアップ</CardTitle>
               <CardDescription>
-                ファイルと規模を選択することで、トーナメントをすぐに作成できます。
+                選手データファイルと競技を入力することで、トーナメントをすぐに作成できます。
               </CardDescription>
             </CardHeader>
             <CardContent>

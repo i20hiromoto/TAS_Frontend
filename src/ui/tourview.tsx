@@ -41,6 +41,7 @@ const TournamentCanvas: React.FC<TournamentCanvasProps> = ({ matches }) => {
 
     for (let i = 0; i < round; i++) {
       const roundKey = `${i + 1}`;
+      const previousroundKey = `${i}`;
       for (let j = 0; j < n; j++) {
         let idx = Math.floor(j / 2);
         if (!matches[roundKey] || !matches[roundKey][idx]) {
@@ -71,10 +72,19 @@ const TournamentCanvas: React.FC<TournamentCanvasProps> = ({ matches }) => {
 
         //縦線の描画
         ctx.strokeStyle = "black";
-        if (match.player1 === match.winner && j % 2 == 0) {
-          ctx.strokeStyle = "red";
-        } else if (match.player2 === match.winner && j % 2 == 1) {
-          ctx.strokeStyle = "red";
+        if (i == 0) {
+          if (match.player1 === match.winner && j % 2 == 0) {
+            ctx.strokeStyle = "red";
+          } else if (match.player2 === match.winner && j % 2 == 1) {
+            ctx.strokeStyle = "red";
+          }
+        } else if (i > 0) {
+          if (
+            match.player1 === matches[previousroundKey][j].winner ||
+            match.player2 === matches[previousroundKey][j].winner
+          ) {
+            ctx.strokeStyle = "red";
+          }
         }
         ctx.beginPath();
         ctx.moveTo(start_width + width * i, start_height + height * j + space);

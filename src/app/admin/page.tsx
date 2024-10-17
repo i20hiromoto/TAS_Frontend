@@ -16,15 +16,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -38,6 +29,7 @@ import axios from "axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TournamentCanvas from "../../ui/tourview";
 import { Players, Result } from "../../ui/interface";
+import { parse } from "path";
 
 type results = {
   [key: string]: Result[];
@@ -67,8 +59,6 @@ export default function AdminScreen() {
   const [editedMatch, setEditedMatch] = useState<results>(
     "" as unknown as results
   );
-  const [inputFields, setInputFields] = useState<InputField[]>([]);
-  const [nextId, setNextId] = useState<number>(1);
   const [searchMatch, setSearchMatch] = useState("");
   const [gamePoints, setGamePoints] = useState<GamePoints>({});
   const [sets, setSets] = useState<string[]>([]);
@@ -87,7 +77,6 @@ export default function AdminScreen() {
         const response: any = await axios.get(
           `http://localhost:3001/get-admin-data?id=${id}`
         );
-
         if (Array.isArray(response.data.players)) {
           setPlayers(response.data.players);
           setFilteredPlayers(response.data.players);
@@ -171,8 +160,7 @@ export default function AdminScreen() {
     }
   };
 
-  const handleEdit = (player: Players) => {
-    sessionStorage.setItem("id", "1");
+  const handleEdit = () => {
     const id = sessionStorage.getItem("id") || "0";
     console.log(editedPlayer);
 
@@ -193,12 +181,11 @@ export default function AdminScreen() {
 
   const handleUpload = async (match: Result) => {
     match.result.game = gamePoints;
-    sessionStorage.setItem("id", "1");
     const id = sessionStorage.getItem("id") || "0";
     let c1 = 0;
     let c2 = 0;
     for (let i = 0; i < Object.keys(gamePoints).length; i++) {
-      const key = `set${i + 1}` as keyof Result["result"]["game"];
+      const key = `${i + 1}` as keyof Result["result"]["game"];
       if (gamePoints[key].player1 !== 0 && gamePoints[key].player2 !== 0) {
         match.result.game[key]!.player1 = gamePoints[key]!.player1;
         match.result.game[key]!.player2 = gamePoints[key]!.player2;
@@ -206,10 +193,8 @@ export default function AdminScreen() {
       }
       if (gamePoints[key].player1 > gamePoints[key].player2) {
         c1++;
-        console.log("player1", match.result.count.c1);
       } else if (gamePoints[key].player1 < gamePoints[key].player2) {
         c2++;
-        console.log("player2", match.result.count.c2);
       }
     }
     match.result.count.c1 = c1;
@@ -218,10 +203,11 @@ export default function AdminScreen() {
       match.winner = match.player1;
     } else if (c1 < c2) {
       match.winner = match.player2;
+    } else if (c1 === c2) {
+      match.winner = "";
     }
-    console.log(match.winner);
     const encodedMatch = encodeURIComponent(JSON.stringify(match));
-    if (match) {
+    if (encodedMatch) {
       try {
         axios.put(
           `http://localhost:3001/edit-results?id=${id}&match=${encodedMatch}`
@@ -239,7 +225,7 @@ export default function AdminScreen() {
   };
 
   const handleAddSet = () => {
-    const newSet = `set${sets.length + 1}`;
+    const newSet = `${sets.length + 1}`;
     setSets([...sets, newSet]);
     setGamePoints({
       ...gamePoints,
@@ -250,8 +236,16 @@ export default function AdminScreen() {
   const handleDeleteSet = (set: string) => {
     const newSets = sets.filter((s) => s !== set);
     const { [set]: _, ...newGamePoints } = gamePoints; // 削除するセットの得点を取り除く
-    setSets(newSets);
-    setGamePoints(newGamePoints);
+    const renumberedSets = newSets.map((_, index) => `${index + 1}`);
+
+    // 新しいセットに対応する gamePoints を更新
+    const renumberedGamePoints = renumberedSets.reduce((acc, curr, index) => {
+      const oldSet = ` ${index + 1}`;
+      acc[curr] = newGamePoints[oldSet] || { player1: 0, player2: 0 };
+      return acc;
+    }, {} as typeof gamePoints);
+    setSets(renumberedSets);
+    setGamePoints(renumberedGamePoints);
   };
 
   const handleGamePointChange = (
@@ -350,7 +344,7 @@ export default function AdminScreen() {
                                   className="col-span-3"
                                 />
                               </div>
-                              <div className="grid grid-cols-4 items-center gap-4">
+                              {/* <div className="grid grid-cols-4 items-center gap-4">
                                 <Label className="text-right">シード</Label>
                                 <Select
                                   onValueChange={(value) =>
@@ -377,13 +371,13 @@ export default function AdminScreen() {
                                     </SelectGroup>
                                   </SelectContent>
                                 </Select>
-                              </div>
+                              </div> */}
                             </div>
                             <SheetFooter>
                               <SheetClose asChild>
                                 <Button
                                   type="submit"
-                                  onClick={() => handleEdit(player)}
+                                  onClick={() => handleEdit()}
                                 >
                                   保存
                                 </Button>
@@ -428,22 +422,51 @@ export default function AdminScreen() {
                     filteredMatches[key].map((match) => (
                       <TableRow key={match.id}>
                         <TableCell>
-                          {key}回戦 {match.id}試合
+                          {parseInt(key) ===
+                          Object.keys(filteredMatches).length ? (
+                            <span>決勝戦</span>
+                          ) : parseInt(key) ===
+                            Object.keys(filteredMatches).length - 1 ? (
+                            <span>準決勝　第{match.id}試合</span>
+                          ) : parseInt(key) ===
+                            Object.keys(filteredMatches).length - 2 ? (
+                            <span>準々決勝　第{match.id}試合</span>
+                          ) : (
+                            <span>
+                              {parseInt(key)}回戦　第{match.id}試合
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {isNumericString(match.player1) ? (
-                            <span>
-                              {match.id}回戦{match.player1}試合勝者
-                            </span>
+                            parseInt(key) ===
+                            Object.keys(filteredMatches).length ? (
+                              <span>準決勝　第{match.player1}試合勝者</span>
+                            ) : parseInt(key) ===
+                              Object.keys(filteredMatches).length - 1 ? (
+                              <span>準々決勝　第{match.player1}試合勝者</span>
+                            ) : (
+                              <span>
+                                {parseInt(key)}回戦　第{match.player1}試合勝者
+                              </span>
+                            )
                           ) : (
                             <span>{match.player1}</span>
                           )}
                         </TableCell>
                         <TableCell>
                           {isNumericString(match.player2) ? (
-                            <span>
-                              {match.id}回戦{match.player2}試合勝者
-                            </span>
+                            parseInt(key) ===
+                            Object.keys(filteredMatches).length ? (
+                              <span>準決勝　第{match.player2}試合勝者</span>
+                            ) : parseInt(key) ===
+                              Object.keys(filteredMatches).length - 1 ? (
+                              <span>準々決勝　第{match.player2}試合勝者</span>
+                            ) : (
+                              <span>
+                                {parseInt(key)}回戦　第{match.player2}試合勝者
+                              </span>
+                            )
                           ) : (
                             <span>{match.player2}</span>
                           )}
@@ -459,11 +482,11 @@ export default function AdminScreen() {
                                 <Button
                                   size="icon"
                                   onClick={(e) => {
-                                    {
-                                      setEditedMatch(
-                                        match as unknown as results
-                                      );
-                                    }
+                                    // {
+                                    //   setEditedMatch(
+                                    //     match as unknown as results
+                                    //   );
+                                    // }
                                     {
                                       setGamePoints(match.result.game);
                                     }
@@ -497,7 +520,9 @@ export default function AdminScreen() {
                                   </SheetDescription>
                                 </SheetHeader>
 
-                                <Button onClick={handleAddSet}>Add Set</Button>
+                                <Button onClick={handleAddSet}>
+                                  Add {match.result.name}
+                                </Button>
                                 {sets.map((set) => (
                                   <div
                                     key={set}

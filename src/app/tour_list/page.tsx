@@ -11,6 +11,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { CalendarIcon, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import axios from "axios";
@@ -71,6 +79,7 @@ export default function TournamentList() {
                 <TableHead>ID</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead>Created date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -81,7 +90,8 @@ export default function TournamentList() {
                   <TableCell className="font-medium">
                     {tournament.name}
                   </TableCell>
-                  <TableCell>{format(tournament.date, "yyyy/MM/dd")}</TableCell>
+                  <TableCell>{tournament.date}</TableCell>
+                  <TableCell>{tournament.gendate}</TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
@@ -92,14 +102,29 @@ export default function TournamentList() {
                       <Pencil className="h-4 w-4" />
                       <span className="sr-only">Edit</span>
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(tournament.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>トーナメント削除</DialogTitle>
+                        </DialogHeader>
+                        <DialogDescription>
+                          大会名 : {tournament.name}
+                          　を削除します。
+                          <div style={{ color: "red" }}>
+                            この操作は取り消せません。本当によろしいですか？
+                          </div>
+                        </DialogDescription>
+                        <Button onClick={() => handleDelete(tournament.id)}>
+                          削除
+                        </Button>
+                      </DialogContent>
+                    </Dialog>
                   </TableCell>
                 </TableRow>
               ))}
