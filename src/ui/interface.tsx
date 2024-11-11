@@ -11,6 +11,7 @@ export type Result = {
   player1: string;
   player2: string;
   winner: string;
+  loser: string;
   result: {
     count: {
       c1: number;

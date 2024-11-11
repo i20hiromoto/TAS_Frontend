@@ -37,6 +37,12 @@ function Dashboard() {
   const [selectedValue, setSelectedValue] = useState<string | undefined>(
     undefined
   );
+  const [selectedValue2, setSelectedValue2] = useState<string | undefined>(
+    "none"
+  );
+  const [selectedValue3, setSelectedValue3] = useState<string | undefined>(
+    "singles"
+  );
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,10 +121,12 @@ function Dashboard() {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("selectValue", selectedValue);
+    formData.append("selectValue2", selectedValue2 || "");
+    formData.append("selectValue3", selectedValue3 || "");
 
     try {
       const response = await axios.post<Players[]>(
-        "http://localhost:3001/upload",
+        "http://localhost:3001/upload_simple",
         formData,
         {
           headers: {
@@ -126,7 +134,6 @@ function Dashboard() {
           },
         }
       );
-      console.log(response.data);
       if (response !== null) {
         router.push("/tour_list");
       }
@@ -247,6 +254,38 @@ function Dashboard() {
                             ソフトテニス
                           </SelectItem>
                           <SelectItem value="tabletennis">卓球</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={selectedValue2}
+                      onValueChange={setSelectedValue2}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="順位決定戦" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>順位決定戦</SelectLabel>
+                          <SelectItem value="none">なし</SelectItem>
+                          <SelectItem value="4">3~4位</SelectItem>
+                          <SelectItem value="8">3~8位</SelectItem>
+                          <SelectItem value="16">3~16位</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={selectedValue3}
+                      onValueChange={setSelectedValue3}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="競技" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>競技選択</SelectLabel>
+                          <SelectItem value="singles">シングルス</SelectItem>
+                          <SelectItem value="doubles">ダブルス</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>

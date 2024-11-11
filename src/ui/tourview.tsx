@@ -49,9 +49,6 @@ const TournamentCanvas: React.FC<TournamentCanvasProps> = ({ matches }) => {
         }
 
         const match = matches[roundKey][idx];
-        if (!match || !match.player1 || !match.player2) {
-          continue;
-        }
 
         ctx.font = "20px Arial";
         if (i == 0) {
@@ -73,15 +70,20 @@ const TournamentCanvas: React.FC<TournamentCanvasProps> = ({ matches }) => {
         //縦線の描画
         ctx.strokeStyle = "black";
         if (i == 0) {
-          if (match.player1 === match.winner && j % 2 == 0) {
+          if (match.player1 === match.winner && j % 2 == 0 && match.winner) {
             ctx.strokeStyle = "red";
-          } else if (match.player2 === match.winner && j % 2 == 1) {
+          } else if (
+            match.player2 === match.winner &&
+            j % 2 == 1 &&
+            match.winner
+          ) {
             ctx.strokeStyle = "red";
           }
         } else if (i > 0) {
           if (
-            match.player1 === matches[previousroundKey][j].winner ||
-            match.player2 === matches[previousroundKey][j].winner
+            (match.player1 === matches[previousroundKey][j].winner ||
+              match.player2 === matches[previousroundKey][j].winner) &&
+            (match.player1 !== "" || match.player2 !== "")
           ) {
             ctx.strokeStyle = "red";
           }
@@ -96,7 +98,7 @@ const TournamentCanvas: React.FC<TournamentCanvasProps> = ({ matches }) => {
         ctx.closePath();
         ctx.strokeStyle = "black";
         //上側の横線の描画
-        if (match.player1 == match.winner) {
+        if (match.player1 == match.winner && match.player1 && match.winner) {
           ctx.strokeStyle = "red";
         }
         if (j % 2 === 0) {
@@ -113,7 +115,7 @@ const TournamentCanvas: React.FC<TournamentCanvasProps> = ({ matches }) => {
           ctx.closePath();
           ctx.strokeStyle = "black";
           //下側の横線の描画
-          if (match.player2 == match.winner) {
+          if (match.player2 == match.winner && match.player2 && match.winner) {
             ctx.strokeStyle = "red";
           }
           ctx.beginPath();
