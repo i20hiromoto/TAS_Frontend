@@ -24,6 +24,7 @@ import { Pencil } from "lucide-react";
 import { Result } from "@/ui/interface";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 type results = {
   [key: string]: Result[];
@@ -52,6 +53,7 @@ const MatchManagement: React.FC<MatchManagementProps> = ({
   const [filteredMatches, setFilteredMatches] = useState<results>(matches);
   const [gamePoints, setGamePoints] = useState<GamePoints>({});
   const [sets, setSets] = useState<string[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const results: results = {};
@@ -166,6 +168,10 @@ const MatchManagement: React.FC<MatchManagementProps> = ({
         [player]: value,
       },
     });
+  };
+
+  const handleScore = () => {
+    router.push("/scoresheet");
   };
 
   return (

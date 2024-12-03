@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import React from "react";
 import {
   Card,
   CardContent,
@@ -26,12 +27,17 @@ import {
   PlayCircle,
 } from "lucide-react";
 
+import { Checkbox } from "@/components/ui/checkbox";
+
+import { Calendar } from "@/components/ui/calendar";
+
 import Header from "@/ui/header";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { format, parseISO } from "date-fns";
 import { Players, TourInfo } from "../ui/interface";
 import { useRouter } from "next/navigation";
+import { Label } from "@/components/ui/label";
 
 function Dashboard() {
   const [selectedValue, setSelectedValue] = useState<string | undefined>(
@@ -43,7 +49,14 @@ function Dashboard() {
   const [selectedValue3, setSelectedValue3] = useState<string | undefined>(
     "singles"
   );
+  const [tourn_name, setTourn_name] = useState<string>("");
+  const [checkboxvalue, setCheckboxValue] = useState<boolean>(false);
+  const [checkboxvalue2, setCheckboxValue2] = useState<boolean>(false);
+  const [checkboxvalue3, setCheckboxValue3] = useState<boolean>(false);
   const [file, setFile] = useState<File | null>(null);
+  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [venue, setVenue] = useState<string>("");
+  const [deadline, setDeadline] = React.useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tourinfo, setTourinfo] = useState<TourInfo[]>([]);
@@ -59,11 +72,35 @@ function Dashboard() {
     document.body.removeChild(link);
   };
 
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   setLoading(true);
+  //   if (!token) {
+  //     router.push("/login&regist");
+  //   }
+  //   try {
+  //     axios.get("http://localhost:3001/protected"),
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       };
+  //   } catch (error: any) {
+  //     if (error.response && error.response.status === 403) {
+  //       setError("Unauthorized access, please log in again.");
+  //       router.push("/login"); // リダイレクト（再ログインページへ）
+  //     } else {
+  //       setError("Error fetching data.");
+  //     }
+  //   }
+  //   setLoading(false);
+  // }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axios.get<TourInfo[]>(
-          "http://localhost:3001/get-tour-info"
+          "http://localhost:3001/get-all-tour-info"
         );
         setTourinfo(response.data);
       } catch (error) {
@@ -110,23 +147,27 @@ function Dashboard() {
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!file || !selectedValue) {
-      setError("ファイルとトーナメントの規模を選択してください");
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("selectValue", selectedValue);
-    formData.append("selectValue2", selectedValue2 || "");
-    formData.append("selectValue3", selectedValue3 || "");
+    const Sports_stat = {
+      singles: checkboxvalue,
+      doubles: checkboxvalue2,
+      team: checkboxvalue3,
+    };
 
+    const formData = new FormData();
+    formData.append("name", tourn_name);
+    formData.append("date", format(date as Date, "yyyy/MM/dd"));
+    formData.append("venue", venue);
+    formData.append("deadline", format(deadline as Date, "yyyy/MM/dd"));
+    formData.append("ranking", selectedValue2 as string);
+    formData.append("sport", selectedValue as string);
+    formData.append("competition", JSON.stringify(Sports_stat));
+    setLoading(false);
     try {
-      const response = await axios.post<Players[]>(
-        "http://localhost:3001/upload_simple",
+      const response = await axios.post<any>(
+        "http://localhost:3001/generate-tourn",
         formData,
         {
           headers: {
@@ -200,7 +241,7 @@ function Dashboard() {
           </Card>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
-          <Card className="col-span-4">
+          {/* <Card className="col-span-4">
             <CardHeader>
               <CardTitle>開催待ちトーナメント数</CardTitle>
             </CardHeader>
@@ -217,23 +258,56 @@ function Dashboard() {
                 ))
               )}
             </CardContent>
-          </Card>
-          <Card className="col-span-3">
+          </Card> */}
+          <Card className="col-span-8">
             <CardHeader>
-              <CardTitle>クイックセットアップ</CardTitle>
+              <CardTitle>大会作成</CardTitle>
               <CardDescription>
-                ファイルと規模を選択することで、トーナメントをすぐに作成できます。
+                下の項目を入力するだけで大会データを作成できます。
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpload}>
                 <div className="grid w-full items-center gap-4">
+                  <Label className="font-bold">大会名を入力</Label>
                   <div className="flex flex-col space-y-1.5">
                     <Input
-                      type="file"
-                      onChange={handleFileChange}
-                      style={{ width: "300px" }}
+                      className="w-full"
+                      placeholder="例 : 〇〇市民大会"
+                      onChange={(e) => setTourn_name(e.target.value)}
                     />
+                  </div>
+                  <Label className="font-bold">開催地を入力</Label>
+                  <div className="flex flex-col space-y-1.5">
+                    <Input
+                      className="w-full"
+                      placeholder="例 : 〇〇市民公園テニスコート"
+                      onChange={(e) => setVenue(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex w-full items-center">
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col items-center gap-4">
+                        <Label className="font-bold">開催日を選択</Label>
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          className="rounded-md border"
+                        />
+                      </div>
+                      <div className="flex flex-col items-center gap-4">
+                        <Label className="font-bold">
+                          エントリー締切日を選択
+                        </Label>
+                        <Calendar
+                          mode="single"
+                          selected={deadline}
+                          onSelect={setDeadline}
+                          className="rounded-md border"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <div className="flex flex-col space-y-1.5">
                     <Select
@@ -257,6 +331,9 @@ function Dashboard() {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
+
+                    <Label className="font-bold">順位決定戦</Label>
+
                     <Select
                       value={selectedValue2}
                       onValueChange={setSelectedValue2}
@@ -274,21 +351,44 @@ function Dashboard() {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    <Select
-                      value={selectedValue3}
-                      onValueChange={setSelectedValue3}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="競技" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>競技選択</SelectLabel>
-                          <SelectItem value="singles">シングルス</SelectItem>
-                          <SelectItem value="doubles">ダブルス</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
+                    <div className="grid w-full items-center gap-4">
+                      <Label className="font-bold">
+                        行う種目にチェックをつけてください
+                      </Label>
+                    </div>
+                    <div className="flex-col space-y-1.5">
+                      <Checkbox
+                        onClick={(e) => setCheckboxValue(!checkboxvalue)}
+                      />
+                      <Label
+                        htmlFor="terms"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        シングルス
+                      </Label>
+                    </div>
+                    <div className="flex space-y-1.5">
+                      <Checkbox
+                        onClick={(e) => setCheckboxValue2(!checkboxvalue2)}
+                      />
+                      <Label
+                        htmlFor="terms"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        ダブルス
+                      </Label>
+                    </div>
+                    <div className="flex space-y-1.5">
+                      <Checkbox
+                        onClick={(e) => setCheckboxValue3(!checkboxvalue3)}
+                      />
+                      <Label
+                        htmlFor="terms"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        団体戦
+                      </Label>
+                    </div>
                   </div>
                   <div className="flex flex-col space-y-1.5"></div>
                   <Button

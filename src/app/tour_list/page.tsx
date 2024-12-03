@@ -19,12 +19,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CalendarIcon, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ArrowDownFromLine } from "lucide-react";
 import { format } from "date-fns";
 import axios from "axios";
 import { TourInfo } from "@/ui/interface";
 import { useRouter } from "next/navigation";
 import Header from "@/ui/header";
+import { response } from "express";
 
 // Mock data for tournaments
 
@@ -36,7 +37,7 @@ export default function TournamentList() {
     const fetchData = async () => {
       try {
         const response = await axios.get<any>(
-          "http://localhost:3001/get-tour-info"
+          "http://localhost:3001/get-all-tour-info"
         );
         setTourinfo(response.data);
       } catch (error) {
@@ -50,7 +51,7 @@ export default function TournamentList() {
   const handleEdit = (id: number, competition: string) => {
     // Placeholder for edit functionality
     sessionStorage.setItem("id", id.toString());
-    router.push(`/select_competition`);
+    router.push(`/admin`);
     console.log(`Editing tournament with id: ${id}`);
   };
 
@@ -62,6 +63,38 @@ export default function TournamentList() {
       setTourinfo(tourinfo.filter((tournament: any) => tournament.id !== id));
     } catch (error) {
       setError("An error occurred while deleting tournament data.");
+    }
+  };
+
+  const handleDownload = async (id: number) => {
+    try {
+      const tour_info = tourinfo.find(
+        (tournament: any) => tournament.id === id
+      );
+
+      // axiosでGETリクエストを送信し、responseTypeをblobに設定
+      const response: any = await axios.get(
+        `http://localhost:3001/get-tourn-file?id=${tour_info.id}`,
+        {
+          responseType: "blob",
+        }
+      );
+
+      if (response.status !== 200) {
+        throw new Error("Network response was not ok");
+      }
+
+      // ダウンロード処理
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${tour_info.name}.xlsx`; // ダウンロードされるファイル名
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download file:", error);
     }
   };
 
@@ -78,8 +111,9 @@ export default function TournamentList() {
               <TableHeader>
                 <TableRow>
                   <TableHead>大会名</TableHead>
+                  <TableHead>開催場所</TableHead>
                   <TableHead>開催日</TableHead>
-                  <TableHead>作成日</TableHead>
+                  <TableHead>エントリー締切日</TableHead>
                   <TableHead className="text-right"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -89,8 +123,9 @@ export default function TournamentList() {
                     <TableCell className="font-medium">
                       {tournament.name}
                     </TableCell>
+                    <TableCell>{tournament.venue}</TableCell>
                     <TableCell>{tournament.date}</TableCell>
-                    <TableCell>{tournament.gendate}</TableCell>
+                    <TableCell>{tournament.deadline}</TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"
@@ -126,6 +161,15 @@ export default function TournamentList() {
                           </Button>
                         </DialogContent>
                       </Dialog>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDownload(tournament.id)}
+                      >
+                        <ArrowDownFromLine className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

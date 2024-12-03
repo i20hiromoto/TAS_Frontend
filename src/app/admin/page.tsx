@@ -23,43 +23,46 @@ export default function AdminScreen() {
   const [filteredMatches, setFilteredMatches] = useState<results>({});
   const [searchMatch, setSearchMatch] = useState("");
   const [tourinfo, setTourinfo] = useState<any>([]);
+  const [cmp_stat, setCmp_stat] = useState<boolean[]>([]);
+  const [mode, setMode] = useState<string>("");
   const router = useRouter();
-
-  useEffect(() => {
-    const id = parseInt(sessionStorage.getItem("id") || "0");
-    const fetchData = async () => {
-      try {
-        const response: any = await axios.get(
-          "http://localhost:3001/get-tour-info"
-        );
-        setTourinfo(response.data.find((tourinfo: any) => tourinfo.id === id));
-      } catch (error) {
-        console.error("An error occurred while fetching tournament data.");
-      }
-    };
-
-    fetchData();
-  }, []);
+  const gameModes = [
+    {
+      title: "シングルス",
+      description: "シングルス競技の管理画面",
+      value: "singles",
+      idx: 0,
+    },
+    {
+      title: "ダブルス",
+      description: "ダブルス競技の管理画面",
+      value: "doubles",
+      idx: 1,
+    },
+    {
+      title: "団体戦",
+      description: "団体競技の管理画面",
+      value: "team",
+      idx: 2,
+    },
+  ];
 
   useEffect(() => {
     const id = sessionStorage.getItem("id") || "0";
-    const competition = sessionStorage.getItem("competition") || "singles";
-    const strcomp = competition.toString();
     const fetchData = async () => {
       try {
         const response: any = await axios.get(
-          `http://localhost:3001/get-admin-data?id=${id}`
+          `http://localhost:3001/get-tour-info?id=${id}`
         );
-        console.log(response.data);
         if (response.data) {
-          if (response.data.players[strcomp] === null) {
-            router.push("/");
+          const info = response.data;
+          setTourinfo(info);
+          for (let i = 0; i < info.competition.length; i++) {
+            if (info.competition[i] === true) {
+              setMode(gameModes[i].value);
+              break;
+            }
           }
-          setPlayers(response.data.players[strcomp]);
-          setFilteredPlayers(response.data.players[strcomp]);
-          setMatches(response.data.matches[strcomp]["base_tournament"]);
-          setFilteredMatches(response.data.matches[strcomp]["base_tournament"]);
-          console.log(response.data.matches[strcomp]["base_tournament"]);
         }
       } catch (err: any) {
         const errorMessage = err.response
@@ -71,6 +74,53 @@ export default function AdminScreen() {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    console.log("mode", mode);
+  }, [mode]);
+
+  useEffect(() => {
+    if (tourinfo && tourinfo.competition) {
+      const defaultVal =
+        tourinfo.competition[0] === true
+          ? gameModes[0].value
+          : tourinfo.competition[1] === true
+          ? gameModes[1].value
+          : gameModes[2].value;
+      setMode(defaultVal);
+    }
+  }, [tourinfo]);
+
+  useEffect(() => {
+    const id = sessionStorage.getItem("id") || "0";
+    const fetchData = async () => {
+      try {
+        const response: any = await axios.get(
+          `http://localhost:3001/get-admin-data?id=${id}`
+        );
+        if (response.data) {
+          console.log(response.data.players[mode]);
+          setPlayers(response.data.players[mode]);
+          setFilteredPlayers(response.data.players[mode]);
+          setMatches(response.data.matches[mode]["base_tournament"]);
+          setFilteredMatches(response.data.matches[mode]["base_tournament"]);
+          setCmp_stat(tourinfo.competition);
+        }
+      } catch (err: any) {
+        const errorMessage = err.response
+          ? err.response.data.message
+          : err.message;
+        console.log("Error:", errorMessage);
+      }
+    };
+
+    fetchData();
+  });
+
+  const handleCompetitionChange = (mode: string, idx: number) => {
+    setMode(mode);
+    console.log("mode", mode);
+  };
   // プレイヤーが変更されたときにフィルタリング
   return (
     <div>
@@ -80,6 +130,30 @@ export default function AdminScreen() {
           <CardTitle style={{ fontSize: "32px" }}>管理画面</CardTitle>
         </CardHeader>
         <CardContent>
+          {mode !== "" && (
+            <Tabs defaultValue={mode}>
+              <TabsList>
+                {tourinfo && tourinfo.competition && mode !== "" && (
+                  <div>
+                    {gameModes.map(
+                      (mode, index) =>
+                        tourinfo.competition[index] === true && (
+                          <TabsTrigger
+                            key={mode.idx}
+                            value={mode.value}
+                            onClick={() =>
+                              handleCompetitionChange(mode.value, mode.idx)
+                            }
+                          >
+                            {mode.title}
+                          </TabsTrigger>
+                        )
+                    )}
+                  </div>
+                )}
+              </TabsList>
+            </Tabs>
+          )}
           <Tabs defaultValue="players">
             <TabsList>
               <TabsTrigger value="players">選手管理</TabsTrigger>
